@@ -1,0 +1,36 @@
+FROM postgres:16.8-bookworm
+
+RUN apt-get update && apt-get install -y \
+    sudo \
+    curl \
+    vim \
+    postgresql-16-repmgr \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo \
+    "postgres ALL=(root) NOPASSWD: /usr/bin/mkdir, /bin/chown, \
+    /usr/bin/openssl, /usr/bin/repmgr, /usr/bin/psql" \
+    > /etc/sudoers.d/postgres
+
+COPY --chmod=755 \
+    ../scripts/_configure_primary.sh \
+    /usr/local/bin/_configure_primary.sh
+
+COPY --chmod=755 \
+    ../scripts/_configure_read_replica.sh \
+    /usr/local/bin/_configure_read_replica.sh
+
+COPY --chmod=755 \
+    ../scripts/_configure_ssl.sh \
+    /usr/local/bin/_configure_ssl.sh
+
+COPY --chmod=755 \
+    ../scripts/_include.sh \
+    /usr/local/bin/_include.sh
+
+COPY --chmod=755 \
+    ../scripts/start.sh \
+    /usr/local/bin/start.sh
+
+ENTRYPOINT ["start.sh"]
+CMD ["postgres", "-p", "5432", "-c", "listen_addresses=*"]
