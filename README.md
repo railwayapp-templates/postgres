@@ -73,6 +73,30 @@ On the Postgres service you wish to designate as the primary:
    new image and configure it as the primary. Once the new deployment is Active,
    follow the steps below to create read replicas
 
+#### Custom Start Command
+
+If you're using a Custom Start Command to pass in extra options to Postgres,
+change `wrapper.sh` to `start.sh` like so:
+
+```diff
+- wrapper.sh postgres --port=5432 -c 'max_connections=100' -c ...
++ start.sh postgres --port=5432 -c 'max_connections=100' -c ...
+```
+
+If your custom start command contains any of the config below (e.g.
+`-c wal_level='replica', etc.), please remove them as they are already
+configured in the image:
+
+```
+wal_level
+wal_log_hints
+max_replication_slots
+max_wal_senders
+hot_standby
+archive_mode
+archive_command
+```
+
 ### Creating Read Replicas
 
 1. Duplicate the primary service from above (right click service -> `Duplicate`)
@@ -142,7 +166,8 @@ To create more read replicas, repeat the steps above on Creating Read Replicas.
 ### Using repmgr
 
 Replication is set up using [repmgr](https://repmgr.org/). All repmgr commands
-are available.
+are available, however promotion (`standby promote` etc.) will not work at
+this time.
 
 1. Set up Railway CLI ([https://docs.railway.com/guides/cli](https://docs.railway.com/guides/cli)]
 2. Right click the service you wish to run repmgr commands on
