@@ -115,4 +115,14 @@ case "$RAILWAY_PG_INSTANCE_TYPE" in
 esac
 
 source "$SH_CONFIGURE_SSL"
-/usr/local/bin/docker-entrypoint.sh "$@"
+
+# `exec` replaces this shell with the entrypoint (which in turn execs
+# postgres), so postgres ends up as PID 1 and receives the container's
+# stop signal directly. Without it bash stays PID 1, ignores the signal
+# (PID 1 drops unhandled signals), and every stop/restart waits out the
+# runtime's grace period and ends in SIGKILL + crash recovery instead of
+# a clean shutdown. Every configure step above has finished and reaped
+# its children by this point (the primary path stops the temporary
+# postgres it started; the replica path waits for the clone), so nothing
+# is left behind for exec to re-parent.
+exec /usr/local/bin/docker-entrypoint.sh "$@"
